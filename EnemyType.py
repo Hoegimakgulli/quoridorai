@@ -1,8 +1,9 @@
 class EemeyFrame:
-    def __init__(self, color, attackRange, moveRange):
+    def __init__(self, color, attackRange, moveRange, hp = 1):
         self.enemy_color = color
         self.enemy_attackRange = attackRange
         self.enemy_moveRange = moveRange
+        self.enemy_hp = hp
 
 enemyFrames = []
 
@@ -19,7 +20,7 @@ blue   = (0, 0, 255)
 purple = (200, 0, 200)
 grey   = (153, 153, 153)
 
-
+# 해당 적 HP 넣어두기
 def EnemyCreateFrame():
     enemyFrames.clear()
     enemyFrames.append(EemeyFrame(red, crossRange, crossRange))
