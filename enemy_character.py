@@ -1,0 +1,165 @@
+import pygame
+import random
+import enemy_character_type
+import numpy as np
+import sys
+# 재귀 한도 늘리기
+sys.setrecursionlimit(10**7)
+
+# 프로퍼티는 _"변수명"으로 설정
+class EnemyData:
+    def __init__(self, num, enemy_pos):
+        self.enemy_num = num
+        self._pos = enemy_pos
+
+    def set_enemy_frame(self, color, attackRange, moveRange, enemy_hp):
+        self.enemy_color = color
+        self.enemy_attack_range = attackRange
+        self.enemy_move_range = moveRange
+        self._hp = enemy_hp
+
+    @property
+    def enemy_pos(self):
+        return self._pos
+    @enemy_pos.setter
+    def enemy_pos(self, enemy_pos):
+        if not 0 <= self._pos[0] < 9 and not 0 <= self._pos[1] < 9:
+            raise ValueError("NUM : {} / 올바르지 않은 위치값입니다.".format(self.enemy_num))
+        self._pos = enemy_pos
+
+    @property
+    def enemy_hp(self):
+        return self._hp
+    @enemy_hp.setter
+    def enemy_hp(self, enemy_hp):
+        if enemy._hp <= 0:
+            print("NUM : {} / 기물이 처치되었습니다.".format(self.enemy_num))
+        self._hp = enemy_hp
+        
+class Path:
+    def __init__(self, _x, _y):
+        self.x = _x
+        self.y = _y
+        self.G = 0
+        self.H = 0
+        self.F = 0
+        self.parentNode = None
+
+# enemy 관련 변수
+enemy_count = 2
+enemy_datas = []
+enemy_frames = enemy_character_type.enemy_create_frame()
+
+# enemy 초기 스폰 위치 조정
+def enemy_spawn():
+    # 초기 인덱싱만 해준 데이터 생성
+    for count in range(enemy_count):
+        frame = enemy_frames[random.randint(0,6)]
+        enemy_datas.append(EnemyData(count, [0, 0]))
+        enemy_datas[count].set_enemy_frame(frame.enemy_color, \
+            frame.enemy_attack_range, frame.enemy_move_range, frame.enemy_hp)
+
+    # 위치 랜덤으로 조정해 pos 값 조정
+    pos = [random.randint(0, 8), random.randint(0, 2)]
+    for count in range(enemy_count):
+        while enemy_find_with_pos(pos) is not False:
+            pos = [random.randint(0, 8), random.randint(0, 2)]
+        enemy_datas[count].enemy_pos = pos
+    return 0
+        
+# pos 값으로 해당 인덱싱 넘버 뱉기
+def enemy_find_with_pos(pos):
+    for count in range(enemy_count):
+        if enemy_datas[count].enemy_pos == pos:
+            return enemy_datas[count].enemy_num
+    return False
+
+# enemy 그리기
+def draw_enemy(screen):
+    for count in range(len(enemy_datas)):
+        drawPos = [enemy_datas[count].enemy_pos[0] * 50 + 25, enemy_datas[count].enemy_pos[1] * 50 + 25]
+        pygame.draw.circle(screen, enemy_datas[count].enemy_color, drawPos, 25)
+
+# A* 절차에 맞게 이동하는 절차 실행
+def enemy_move(player, WIDTH, HEIGHT):
+    # 모든 적 기물에 대해 실행
+    for count in range(len(enemy_datas)):
+        path_finding(player, enemy_datas[count], WIDTH, HEIGHT)
+
+# A* 시작 player, enemy 매개변수로 받음
+def path_finding(player, enemy, WIDTH, HEIGHT):
+    sizeX = WIDTH
+    sizeY = HEIGHT
+    # path 리스트 초기화 [i][j]       
+    pathArray = [[Path(i, j) for j in range(sizeY)] for i in range(sizeX)]
+
+    startNode = pathArray[enemy.enemy_pos[0]][enemy.enemy_pos[1]]
+    targetNode = pathArray[player.player_pos[0]][player.player_pos[1]]
+
+    openList = [startNode]
+    closeList = []
+    finalPathList = []
+    curNode = None
+
+    def open_list_add(x, y):
+        # check_can_move함수에 매개변수로 전달하기 위한 임시 변수
+        if 0 <= x < sizeX and 0 <= y < sizeY and not check_can_move([x, y]):
+            node = pathArray[x][y]
+            if node not in closeList and node not in openList:
+                node.parentNode = curNode
+                node.G = curNode.G + 1
+                node.H = abs(node.x - targetNode.x) + abs(node.y - targetNode.y)
+                node.F = node.G + node.H
+                openList.append(node)
+
+    while openList:
+        curNode = min(openList, key=lambda node: (node.F, node.H))
+        openList.remove(curNode)
+        closeList.append(curNode)
+
+        if curNode == targetNode:
+            print("A* end")
+            targetCurNode = targetNode.parentNode
+            while targetCurNode != startNode:
+                finalPathList.append(targetCurNode)
+                targetCurNode = targetCurNode.parentNode
+            finalPathList.append(startNode)
+            finalPathList.reverse()
+            change_enemy_pos(finalPathList, enemy, player)
+            return 0
+
+        open_list_add(curNode.x, curNode.y + 1)
+        open_list_add(curNode.x + 1, curNode.y)
+        open_list_add(curNode.x, curNode.y - 1)
+        open_list_add(curNode.x - 1, curNode.y)
+        
+        # if not finalPathList:
+        #     return path_finding(player, enemy, sizeX, sizeY)
+
+def change_enemy_pos(path, enemy, player):
+    if not check_can_attack(enemy, player):
+        curMovePos = enemy.enemy_pos
+        for pathCount in path:
+            pathPos = [pathCount.x, pathCount.y]
+            for movePos in enemy.enemy_move_range:
+                trimPos = [curMovePos[0] + movePos[0], curMovePos[1] + movePos[1]]
+                if trimPos == pathPos:
+                    enemy.enemy_pos = trimPos
+                    break
+        if check_can_attack(enemy, player):
+            player.player_hp -= 1
+
+# enemy가 player를 공격할 수 있는지 판독
+def check_can_attack(enemy, player):
+    for attackPos in enemy.enemy_attack_range:
+        trimPos = [enemy.enemy_pos[0] + attackPos[0], enemy.enemy_pos[1] + attackPos[1]]
+        if trimPos == player.player_pos:
+            return True
+    return False
+
+# enemy가 해당 위치로 이동할 수 있는지 확인하는 함수
+def check_can_move(movePos):
+    for suvEnemy in enemy_datas:
+        if movePos == suvEnemy.enemy_pos:
+            return True
+    return False

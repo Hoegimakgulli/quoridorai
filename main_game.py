@@ -1,5 +1,5 @@
-import Enemy
-import Player
+import enemy_character
+import player_character
 import pygame
 
 pygame.init()
@@ -13,10 +13,12 @@ pygame.display.set_caption("쿼리도 슈팅 AI")
 
 turn = 1
 running = True
-turnAnchor = 1
+turn_anchor = 1
 
 def Initialized():
-    turnAnchor = 1
+    global turn_anchor, turn
+    turn_anchor = 1
+    turn += 1
 
 def DrawBorad():
     rect_pos_size = [0, 0, 50, 50]
@@ -39,40 +41,40 @@ def DrawBorad():
 
 # GameRule 모음
 def EnemyWin():
-    if len(Enemy.EnemyData) <= 0:
+    if len(enemy_character.EnemyData) <= 0:
         print("EnemyWin")
 
 def PlayerWin():
-    if len(Enemy.EnemyData) <= 0:
+    if len(enemy_character.EnemyData) <= 0:
         print("PlayerWin")
 
 # 시작 메인 함수 (게임 룰 관리 및 유닛 이동 절차)
-Enemy.EnemySpawn()
-Player.PlayerSpawn()
+enemy_character.enemy_spawn()
+player_character.PlayerSpawn()
 while running:
     for event in pygame.event.get():
         if event.type == pygame.QUIT:
             running = False
         if event.type == pygame.KEYUP:
             if event.key == pygame.K_SPACE:
-                turn += 1
-                turnAnchor = 1
+                Initialized()
 
     # enemyturn 실행
-    if turn % 2 == 0 and turnAnchor == 1:
+    if turn % 2 == 0 and turn_anchor == 1:
         print("Start EnemyTurn")
-        turnAnchor = 0
-        Enemy.EnemyMove(Player.playerDatas[0], WIDTH, HEIGHT)
+        turn_anchor = 0
+        if len(player_character.player_datas) > 0:
+            enemy_character.enemy_move(player_character.player_datas[0], WIDTH, HEIGHT)
 
     # playerturn 실행
-    if turn % 2 == 1 and turnAnchor == 1:
+    if turn % 2 == 1 and turn_anchor == 1:
         print("Start playerTurn")
-        turnAnchor = 0
+        turn_anchor = 0
         # player 움직이는 함수 실행
 
-    DrawBorad()
-    Enemy.DrawEnemy(screen)
-    Player.DrawPlayer(screen)
+    DrawBorad() 
+    enemy_character.draw_enemy(screen)
+    player_character.DrawPlayer(screen) 
 
     pygame.display.flip()
 
