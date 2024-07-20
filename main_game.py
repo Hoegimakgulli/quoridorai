@@ -1,5 +1,6 @@
 import enemy_character
 import player_character
+import wall_data
 import pygame
 
 pygame.init()
@@ -15,7 +16,7 @@ turn = 1
 running = True
 turn_anchor = 1
 
-def Initialized():
+def initialized():
     global turn_anchor, turn
     turn_anchor = 1
     turn += 1
@@ -40,24 +41,25 @@ def DrawBorad():
             rect_pos_size[1] += 50
 
 # GameRule 모음
-def EnemyWin():
+def enemy_win():
     if len(enemy_character.EnemyData) <= 0:
-        print("EnemyWin")
+        print("enemy_win")
 
-def PlayerWin():
+def player_win():
     if len(enemy_character.EnemyData) <= 0:
-        print("PlayerWin")
+        print("player_win")
 
 # 시작 메인 함수 (게임 룰 관리 및 유닛 이동 절차)
 enemy_character.enemy_spawn()
-player_character.PlayerSpawn()
+player_character.player_spawn()
+wall_data.set_random_wall()
 while running:
     for event in pygame.event.get():
         if event.type == pygame.QUIT:
             running = False
         if event.type == pygame.KEYUP:
             if event.key == pygame.K_SPACE:
-                Initialized()
+                initialized()
 
     # enemyturn 실행
     if turn % 2 == 0 and turn_anchor == 1:
@@ -72,9 +74,10 @@ while running:
         turn_anchor = 0
         # player 움직이는 함수 실행
 
-    DrawBorad() 
+    DrawBorad()
+    wall_data.draw_wall(screen)
     enemy_character.draw_enemy(screen)
-    player_character.DrawPlayer(screen) 
+    player_character.draw_player(screen) 
 
     pygame.display.flip()
 

@@ -33,13 +33,13 @@ player_count = 1
 player_datas = []
 player_frames = player_character_type.player_create_frame()
 
-def PlayerSpawn():
+def player_spawn():
     player_datas.append(PlayerData(0, [4, 7]))
     frame = player_frames[random.randint(0,6)]
     player_datas[0].set_player_frame(frame.player_color, \
         frame.player_attack_range, frame.player_move_range, frame.player_hp)
 
-def DrawPlayer(screen):
+def draw_player(screen):
     for count in range(len(player_datas)):
         draw_pos = [player_datas[count].player_pos[0] * 50 + 25, player_datas[count].player_pos[1] * 50 + 25]
         pygame.draw.circle(screen, player_datas[count].player_color, draw_pos, 25)

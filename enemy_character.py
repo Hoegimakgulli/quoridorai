@@ -43,7 +43,7 @@ class Path:
         self.G = 0
         self.H = 0
         self.F = 0
-        self.parentNode = None
+        self.parent_node = None
 
 # enemy 관련 변수
 enemy_count = 2
@@ -88,53 +88,53 @@ def enemy_move(player, WIDTH, HEIGHT):
 
 # A* 시작 player, enemy 매개변수로 받음
 def path_finding(player, enemy, WIDTH, HEIGHT):
-    sizeX = WIDTH
-    sizeY = HEIGHT
+    size_x = WIDTH
+    size_y = HEIGHT
     # path 리스트 초기화 [i][j]       
-    pathArray = [[Path(i, j) for j in range(sizeY)] for i in range(sizeX)]
+    path_array = [[Path(i, j) for j in range(size_y)] for i in range(size_x)]
 
-    startNode = pathArray[enemy.enemy_pos[0]][enemy.enemy_pos[1]]
-    targetNode = pathArray[player.player_pos[0]][player.player_pos[1]]
+    start_node = path_array[enemy.enemy_pos[0]][enemy.enemy_pos[1]]
+    target_node = path_array[player.player_pos[0]][player.player_pos[1]]
 
-    openList = [startNode]
-    closeList = []
-    finalPathList = []
-    curNode = None
+    open_list = [start_node]
+    close_list = []
+    final_path_list = []
+    cur_node = None
 
     def open_list_add(x, y):
         # check_can_move함수에 매개변수로 전달하기 위한 임시 변수
-        if 0 <= x < sizeX and 0 <= y < sizeY and not check_can_move([x, y]):
-            node = pathArray[x][y]
-            if node not in closeList and node not in openList:
-                node.parentNode = curNode
-                node.G = curNode.G + 1
-                node.H = abs(node.x - targetNode.x) + abs(node.y - targetNode.y)
+        if 0 <= x < size_x and 0 <= y < size_y and not check_can_move([x, y]):
+            node = path_array[x][y]
+            if node not in close_list and node not in open_list:
+                node.parent_node = cur_node
+                node.G = cur_node.G + 1
+                node.H = abs(node.x - target_node.x) + abs(node.y - target_node.y)
                 node.F = node.G + node.H
-                openList.append(node)
+                open_list.append(node)
 
-    while openList:
-        curNode = min(openList, key=lambda node: (node.F, node.H))
-        openList.remove(curNode)
-        closeList.append(curNode)
+    while open_list:
+        cur_node = min(open_list, key=lambda node: (node.F, node.H))
+        open_list.remove(cur_node)
+        close_list.append(cur_node)
 
-        if curNode == targetNode:
+        if cur_node == target_node:
             print("A* end")
-            targetCurNode = targetNode.parentNode
-            while targetCurNode != startNode:
-                finalPathList.append(targetCurNode)
-                targetCurNode = targetCurNode.parentNode
-            finalPathList.append(startNode)
-            finalPathList.reverse()
-            change_enemy_pos(finalPathList, enemy, player)
+            targetcur_node = target_node.parent_node
+            while targetcur_node != start_node:
+                final_path_list.append(targetcur_node)
+                targetcur_node = targetcur_node.parent_node
+            final_path_list.append(start_node)
+            final_path_list.reverse()
+            change_enemy_pos(final_path_list, enemy, player)
             return 0
 
-        open_list_add(curNode.x, curNode.y + 1)
-        open_list_add(curNode.x + 1, curNode.y)
-        open_list_add(curNode.x, curNode.y - 1)
-        open_list_add(curNode.x - 1, curNode.y)
+        open_list_add(cur_node.x, cur_node.y + 1)
+        open_list_add(cur_node.x + 1, cur_node.y)
+        open_list_add(cur_node.x, cur_node.y - 1)
+        open_list_add(cur_node.x - 1, cur_node.y)
         
-        # if not finalPathList:
-        #     return path_finding(player, enemy, sizeX, sizeY)
+        # if not final_path_list:
+        #     return path_finding(player, enemy, size_x, size_y)
 
 def change_enemy_pos(path, enemy, player):
     if not check_can_attack(enemy, player):
