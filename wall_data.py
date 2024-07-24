@@ -38,11 +38,23 @@ def set_random_wall():
         rand_wall_pos = (y * 9) + x
         rand_wall_dir = random.randint(0, 3) * 2
         # 만약 랜덤한 위치에 벽이 이미 세워져있다면
-        while wall_datas[rand_wall_pos][rand_wall_dir] == 0:
+        # or 벽이 기존에 있던 벽을 관통한다면
+
+        # 벽 관통 여부 초기화 함수       
+        penetrate_x = x+1 if rand_wall_dir == 2 else x
+        penetrate_y = y+1 if rand_wall_dir == 4 else y
+        build_dir = 2 if rand_wall_dir == 0 or rand_wall_dir == 4 else 4
+
+        while wall_datas[rand_wall_pos][rand_wall_dir] == 0 or \
+            is_penetrate_wall(penetrate_x, penetrate_y, build_dir):
             x = random.randint(0, 7)
             y = random.randint(0, 7)
             rand_wall_pos = (y * 9) + x
             rand_wall_dir = random.randint(0, 3) * 2
+
+            penetrate_x = x+1 if rand_wall_dir == 2 else x
+            penetrate_y = y+1 if rand_wall_dir == 4 else y
+            build_dir = 2 if rand_wall_dir == 0 or rand_wall_dir == 4 else 4
 
         # 벽 데이터 변경 막힘 = 0
         # 아직 반벽 처리 안해줌!!!!!!!!!!!!!!!!!! 참고 바람
@@ -67,6 +79,41 @@ def set_random_wall():
             pass
     print("벽 생성 완료")
 
+# 벽끼리 관통되어 생성될 수 있는지 확인하는 함수 관통될 시 True 반환
+def is_penetrate_wall(start_posx: int, start_posy: int, build_dir: int) -> bool:
+    global wall_datas
+    trim_posx = start_posx
+    trim_posy = start_posy
+
+    if build_dir == 0: # 위쪽
+        trim_posx += -1
+        trim_posy += -1
+        if wall_datas[trim_posy * 9 + trim_posx][build_dir] == 0 and \
+            wall_datas[trim_posy * 9 + trim_posx + 1][build_dir] == 0:
+            return True
+        pass
+    elif build_dir == 2: # 오른쪽
+        if wall_datas[trim_posy * 9 + trim_posx][build_dir] == 0 and \
+            wall_datas[(trim_posy - 1) * 9 + trim_posx][build_dir] == 0:
+            return True
+        pass
+    elif build_dir == 4: # 아래쪽
+        if wall_datas[trim_posy * 9 + trim_posx][build_dir] == 0 and \
+            wall_datas[trim_posy * 9 + trim_posx - 1][build_dir] == 0:
+            return True
+        pass
+    elif build_dir == 6: # 왼쪽
+        trim_posx += -1
+        trim_posy += -1
+        if wall_datas[trim_posy * 9 + trim_posx][build_dir] == 0 and \
+            wall_datas[(trim_posy + 1) * 9 + trim_posx][build_dir] == 0:
+            return True
+        pass
+    else:
+        raise ValueError("선택하신 방향은 올바르지않은 방향입니다.")
+    return False
+    pass
+
 # 벽 그리기 함수
 def draw_wall(screen):
     for draw_wall_pos in range(81):
@@ -90,5 +137,6 @@ def draw_wall(screen):
     pass
 
 # 현재 위치에서 계산하는 함수
-def is_block_wall(pos, move_dir):
+# 움직이기전 좌표, 움직이고난 좌표, 미리 벽처리한 벽 데이터
+def is_block_wall(start_pos, end_pos, wall_datas):
     pass
