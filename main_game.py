@@ -63,9 +63,6 @@ def convert_env_data_set(env_data):
             if env_data[wall_posX, wall_posY, move_dir] == 0:  # 벽에 막힘 처리
                 wall_data.wall_datas[wall][pygame_move_dir * 2] == 0
             pygame_move_dir += 1
-
-    # 플레이어 indexing를 넣어야겠다는 생각?..
-    # 적
     pass
 
 
@@ -103,7 +100,8 @@ def player_win():
 # 시작 메인 함수 (게임 룰 관리 및 유닛 이동 절차)
 enemy_character.enemy_spawn()
 player_character.player_spawn()
-wall_data.set_random_wall()
+# wall_data.py안에 player 데이터와 enemy 데이터 각각 전달
+wall_data.set_random_wall(player_character.player_datas, enemy_character.enemy_datas)
 
 while running:
     for event in pygame.event.get():

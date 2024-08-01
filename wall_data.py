@@ -1,5 +1,6 @@
 import random
 import pygame
+import copy
 
 # wall 데이터 삽입 일단 8 x 81 형태의 배열로 선언 i = 현재 위치 j = 8방향
 # j - 0 2 4 6 (상우하좌) , 1 3 5 7 (↗, ↘, ↙, ↖)
@@ -31,51 +32,56 @@ def initl_wall():
 
 
 # 처음 맵에서 랜덤으로 벽 10개 생성하는 함수
-def set_random_wall():
+def set_random_wall(origin_player_datas, origin_enemy_datas):
     initialized()
     global wall_datas
 
     # 벽으로 인해 가둬지는 기물이 있는지 확인하는 함수
-    def is_confine_wall(tmp_wall_data):
-        check_move_point = [[1] * 4 for _ in range(81)]
-        check_list = [0]
+    def is_confine_wall(player_datas, enemy_datas, walls) -> bool:
+        if walls == None:
+            raise ValueError("확인할 벽 데이터가 존재하지 않습니다.")
+        
+        for player in player_datas:
+            visited = [0 for _ in range(81)]
 
-        while check_list:
-            select_pos = check_list[0]
-            del check_list[0]
+            def DFS(now):
+                visited[now] = 1
+                for check_dir in range(4):
+                    next = 0
+                    if walls[now][check_dir * 2] == 0:
+                        continue
+                    
+                    # 이동한 방향에 맞게 DFS 굴리기
+                    if check_dir == 0: next = now - 9 # 위
+                    elif check_dir == 1: next = now + 1  # 오른쪽
+                    elif check_dir == 2: next = now + 9  # 아래
+                    elif check_dir == 3: next = now - 1  # 왼쪽
 
-            # 4방향 전부 검사 후 벽으로 안막혀 있으면 리스트에 추가
-            for check_dir in [0, 2, 4, 6]:
-                if not tmp_wall_data[select_pos][check_dir] == 0:
-                    if check_dir == 0:
-                        check_pos = select_pos - 9
-                    elif check_dir == 2:
-                        check_pos = select_pos + 1
-                    elif check_dir == 4:
-                        check_pos = select_pos + 9
-                    else:
-                        check_pos = select_pos - 1
+                    if visited[next] == 1:
+                        continue
+                    
+                    DFS(next)
+            
+            # 초기 플레이어 위치 그래프화
+            DFS(player.player_pos[0] + (player.player_pos[1] * 9))
 
-                    if check_move_point[check_pos][check_dir // 2] == 1:
-                        check_list.append(check_pos)
-                        check_move_point[check_pos][check_dir // 2] = 0
-                # 벽으로 막힌경우
-                else:
-                    check_move_point[check_pos][check_dir // 2] = 0
-        # 만약 가보지 못한 곳이 존재한다면 막혀있는 공간이 있다고 판단
-        for check_count in range(81):
-            for check_dir in range(4):
-                if check_move_point[check_count][check_dir] == 1:
+            # 모든 적들 조사 후 값 확인
+            for enemy in enemy_datas:
+                enemy_graph_pos = enemy.enemy_pos[0] + (enemy.enemy_pos[1] * 9)
+                if visited[enemy_graph_pos] == 0:
+                    print("True")
                     return True
-
+        
         return False
 
-    def set_wall_data(pos, dir, wall, posx, posy):
+    def set_wall_data(pos, dir, wall):
+        posx = pos % 9
+        posy = pos // 9
         if dir == 0 or dir == 4:
             wall[pos][dir] = 0
             wall[pos + 1][dir] = 0
-            dir = 0 if dir == 4 else 4
-            posy += 1 if dir == 0 else -1
+            dir = (0 if dir == 4 else 4)
+            posy += (1 if dir == 0 else -1)
             pos = (posy * 9) + posx
             wall[pos][dir] = 0
             wall[pos + 1][dir] = 0
@@ -83,8 +89,8 @@ def set_random_wall():
         elif dir == 2 or dir == 6:
             wall[pos][dir] = 0
             wall[pos + 9][dir] = 0
-            dir = 2 if dir == 6 else 6
-            posx += 1 if dir == 6 else -1
+            dir = (2 if dir == 6 else 6)
+            posx += (1 if dir == 6 else -1)
             pos = (posy * 9) + posx
             wall[pos][dir] = 0
             wall[pos + 9][dir] = 0
@@ -106,10 +112,13 @@ def set_random_wall():
         penetrate_y = y + 1 if rand_wall_dir == 4 else y
         build_dir = 2 if rand_wall_dir == 0 or rand_wall_dir == 4 else 4
 
-        # tmp_wall_datas = set_wall_data(rand_wall_pos, rand_wall_dir, wall_datas.copy(), x, y)
+        # 기존에 있던 벽 데이터 깊은 복사
+        copy_wall_datas = copy.deepcopy(wall_datas)
+        tmp_wall_datas = set_wall_data(rand_wall_pos, rand_wall_dir, copy_wall_datas)
 
         # 벽 설치 가능 여부 확인 아래 조건에 걸리면 다시 랜덤으로 뽑아서 쓰기
-        while wall_datas[rand_wall_pos][rand_wall_dir] == 0 or is_penetrate_wall(penetrate_x, penetrate_y, build_dir):  # or is_confine_wall(tmp_wall_datas):
+        while is_penetrate_wall(penetrate_x, penetrate_y, build_dir, rand_wall_pos, rand_wall_dir)\
+             or is_confine_wall(origin_player_datas, origin_enemy_datas, tmp_wall_datas):
             x = random.randint(0, 7)
             y = random.randint(0, 7)
             rand_wall_pos = (y * 9) + x
@@ -118,34 +127,16 @@ def set_random_wall():
             penetrate_x = x + 1 if rand_wall_dir == 2 else x
             penetrate_y = y + 1 if rand_wall_dir == 4 else y
             build_dir = 2 if rand_wall_dir == 0 or rand_wall_dir == 4 else 4
-            # tmp_wall_datas = set_wall_data(rand_wall_pos, rand_wall_dir, wall_datas.copy(), x, y)
+            # 벽 데이터 다시 복사 후 넣어주기
+            copy_wall_datas = copy.deepcopy(wall_datas)
+            tmp_wall_datas = set_wall_data(rand_wall_pos, rand_wall_dir, copy_wall_datas)
 
-        wall_datas = set_wall_data(rand_wall_pos, rand_wall_dir, wall_datas.copy(), x, y)
-        # 벽 데이터 변경 막힘 = 0
-        # if rand_wall_dir == 0 or rand_wall_dir == 4:
-        #     wall_datas[rand_wall_pos][rand_wall_dir] = 0
-        #     wall_datas[rand_wall_pos + 1][rand_wall_dir] = 0
-        #     rand_wall_dir = 0 if rand_wall_dir == 4 else 4
-        #     y += 1 if rand_wall_dir == 0 else -1
-        #     rand_wall_pos = (y * 9) + x
-        #     wall_datas[rand_wall_pos][rand_wall_dir] = 0
-        #     wall_datas[rand_wall_pos + 1][rand_wall_dir] = 0
-        #     pass
-
-        # elif rand_wall_dir == 2 or rand_wall_dir == 6:
-        #     wall_datas[rand_wall_pos][rand_wall_dir] = 0
-        #     wall_datas[rand_wall_pos + 9][rand_wall_dir] = 0
-        #     rand_wall_dir = 2 if rand_wall_dir == 6 else 6
-        #     x += 1 if rand_wall_dir == 6 else -1
-        #     rand_wall_pos = (y * 9) + x
-        #     wall_datas[rand_wall_pos][rand_wall_dir] = 0
-        #     wall_datas[rand_wall_pos + 9][rand_wall_dir] = 0
-        #     pass
+        wall_datas = set_wall_data(rand_wall_pos, rand_wall_dir, wall_datas)
     print("벽 생성 완료")
 
 
 # 벽끼리 관통되어 생성될 수 있는지 확인하는 함수 관통될 시 True 반환
-def is_penetrate_wall(start_posx: int, start_posy: int, build_dir: int) -> bool:
+def is_penetrate_wall(start_posx: int, start_posy: int, build_dir: int, rand_pos, rand_dir) -> bool:
     global wall_datas
     trim_posx = start_posx
     trim_posy = start_posy
@@ -172,6 +163,15 @@ def is_penetrate_wall(start_posx: int, start_posy: int, build_dir: int) -> bool:
         pass
     else:
         raise ValueError("선택하신 방향은 올바르지않은 방향입니다.")
+
+    # 같은 라인에 겹쳐있을 경우
+    if rand_dir == 0 or rand_dir == 4:
+        if wall_datas[rand_pos][rand_dir] == 0 or wall_datas[rand_pos+1][rand_dir] == 0:
+            return True
+    elif rand_dir == 2 or rand_dir == 6:
+        if wall_datas[rand_pos][rand_dir] == 0 or wall_datas[rand_pos+9][rand_dir] == 0:
+            return True
+
     return False
 
 
@@ -214,5 +214,4 @@ def is_block_wall(start_pos, move_dir, wall_datas) -> bool:
     else:
         if wall_datas[pos_graph][(move_dir + 1) % 8] and wall_datas[pos_graph][(move_dir - 1) % 8]:
             return False
-
     return True
