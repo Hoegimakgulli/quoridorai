@@ -60,6 +60,11 @@ enemy_count = 2
 enemy_datas = []
 enemy_frames = enemy_character_type.enemy_create_frame()
 
+# path_finding player, enemy 임시 저장 함수 실제로 움직일 때 사용하기 위해 넣어두는 함수 
+# pygame안에서만 사용할것 AI에는 상관 X
+player_tmp_box = None
+enemy_tmp_box = None
+
 
 # enemy 초기 스폰 위치 조정
 def enemy_spawn():
@@ -95,21 +100,25 @@ def draw_enemy(screen):
 
 # A* 절차에 맞게 이동하는 절차 실행
 def enemy_move(player, WIDTH, HEIGHT, wall_data):
+    global player_tmp_box
+    global enemy_tmp_box
     # 모든 적 기물에 대해 실행
     for count in range(len(enemy_datas)):
-        path_finding(player, enemy_datas[count], WIDTH, HEIGHT, wall_data)
+        player_tmp_box = player
+        enemy_tmp_box = enemy_datas[count]
+        path_finding(player.player_pos, enemy_datas[count].enemy_pos, WIDTH, HEIGHT, wall_data)
 
 
 # A* 시작 player, enemy 매개변수로 받음
-def path_finding(player, enemy, WIDTH, HEIGHT, wall_data):
+def path_finding(player_pos, enemy_pos, WIDTH, HEIGHT, wall_data):
     iter = 0
     size_x = WIDTH
     size_y = HEIGHT
     # path 리스트 초기화 [i][j]
     path_array = [[Path(i, j) for j in range(size_y)] for i in range(size_x)]
 
-    start_node = path_array[enemy.enemy_pos[0]][enemy.enemy_pos[1]]
-    target_node = path_array[player.player_pos[0]][player.player_pos[1]]
+    start_node = path_array[enemy_pos[0]][enemy_pos[1]]
+    target_node = path_array[player_pos[0]][player_pos[1]]
 
     open_list = [start_node]
     close_list = []
@@ -164,8 +173,8 @@ def path_finding(player, enemy, WIDTH, HEIGHT, wall_data):
                 targetcur_node = targetcur_node.parent_node
             final_path_list.append(start_node)
             final_path_list.reverse()
-            change_enemy_pos(final_path_list, enemy, player)
-            return True
+            change_enemy_pos(final_path_list)
+            return final_path_list
 
         # 아직 대각쪽은 찾아보지 않음 상하좌우만 설정한 상태
         open_list_add(cur_node.x, cur_node.y + 1, 4)
@@ -174,7 +183,9 @@ def path_finding(player, enemy, WIDTH, HEIGHT, wall_data):
         open_list_add(cur_node.x - 1, cur_node.y, 6)
 
 
-def change_enemy_pos(path, enemy, player):
+def change_enemy_pos(path):
+    enemy = enemy_tmp_box
+    player = player_tmp_box
     if not check_can_attack(enemy, player):
         curMovePos = enemy.enemy_pos
         for pathCount in path:
