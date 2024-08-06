@@ -148,11 +148,11 @@ def path_finding(player_pos, enemy_pos, WIDTH, HEIGHT, wall_data):
         pos_graph = start_pos[1] * 9 + start_pos[0]
         # 상하좌우 방향
         if move_dir % 2 == 0:
-            if wall_datas[pos_graph][move_dir] == 0:
+            if wall_datas[pos_graph][move_dir] == 1:
                 return False
         # 나머지 대각방향 처리 1(↗), 3(↘), 5(↙), 7(↖)
         else:
-            if wall_datas[pos_graph][(move_dir + 1) % 8] and wall_datas[pos_graph][(move_dir - 1) % 8]:
+            if wall_datas[pos_graph][(move_dir + 1) % 8] == 1 and wall_datas[pos_graph][(move_dir - 1) % 8] == 1:
                 return False
 
         return True
@@ -188,7 +188,7 @@ def path_finding(player_pos, enemy_pos, WIDTH, HEIGHT, wall_data):
         open_list_add(cur_node.x - 1, cur_node.y, 6)
     
     print(path_list_pos)
-    return path_list_pos
+    return copy.deepcopy(path_list_pos)
 
 
 def change_enemy_pos(path):
