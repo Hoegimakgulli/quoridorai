@@ -3,6 +3,7 @@ import random
 import enemy_character_type
 import numpy as np
 import sys
+import copy
 
 # 재귀 한도 늘리기
 sys.setrecursionlimit(10**7)
@@ -64,10 +65,13 @@ enemy_frames = enemy_character_type.enemy_create_frame()
 # pygame안에서만 사용할것 AI에는 상관 X
 player_tmp_box = None
 enemy_tmp_box = None
-
+player_datas = []
+target_player = None
 
 # enemy 초기 스폰 위치 조정
-def enemy_spawn():
+def enemy_spawn(tmp_player_datas):
+    global player_datas
+    player_datas = tmp_player_datas
     # 초기 인덱싱만 해준 데이터 생성
     for count in range(enemy_count):
         frame = enemy_frames[random.randint(0, 6)]
@@ -100,17 +104,15 @@ def draw_enemy(screen):
 
 # A* 절차에 맞게 이동하는 절차 실행
 def enemy_move(player, WIDTH, HEIGHT, wall_data):
-    global player_tmp_box
-    global enemy_tmp_box
     # 모든 적 기물에 대해 실행
     for count in range(len(enemy_datas)):
-        player_tmp_box = player
-        enemy_tmp_box = enemy_datas[count]
         path_finding(player.player_pos, enemy_datas[count].enemy_pos, WIDTH, HEIGHT, wall_data)
 
 
 # A* 시작 player, enemy 매개변수로 받음
 def path_finding(player_pos, enemy_pos, WIDTH, HEIGHT, wall_data):
+    global target_player
+    target_player = player_pos
     iter = 0
     size_x = WIDTH
     size_y = HEIGHT
@@ -178,18 +180,33 @@ def path_finding(player_pos, enemy_pos, WIDTH, HEIGHT, wall_data):
             
             for path in final_path_list:
                 path_list_pos.append([path.x, path.y])
-            return path_list_pos
 
         # 아직 대각쪽은 찾아보지 않음 상하좌우만 설정한 상태
         open_list_add(cur_node.x, cur_node.y + 1, 4)
         open_list_add(cur_node.x + 1, cur_node.y, 2)
         open_list_add(cur_node.x, cur_node.y - 1, 0)
         open_list_add(cur_node.x - 1, cur_node.y, 6)
+    
+    print(path_list_pos)
+    return path_list_pos
 
 
 def change_enemy_pos(path):
-    enemy = enemy_tmp_box
-    player = player_tmp_box
+    enemy = None
+    player = None
+    for enemy_pos_data in enemy_datas:
+        if enemy_pos_data.enemy_pos[0] == path[0].x and enemy_pos_data.enemy_pos[1] == path[0].y:
+            enemy = enemy_pos_data
+    
+    for player_pos_data in player_datas:
+        if player_pos_data.player_pos == target_player:
+            player = player_pos_data
+    
+    if not enemy:
+        return None
+    if not player:
+        return ValueError("player가 존재하지 않습니다.")
+
     if not check_can_attack(enemy, player):
         curMovePos = enemy.enemy_pos
         for pathCount in path:
