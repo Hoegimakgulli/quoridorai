@@ -123,6 +123,7 @@ def path_finding(player_pos, enemy_pos, WIDTH, HEIGHT, wall_data):
     open_list = [start_node]
     close_list = []
     final_path_list = []
+    path_list_pos = []
     cur_node = None
 
     # 경로상 움직일 수 있는 좌표인지 확인 후 오픈리스트에 추가
@@ -174,7 +175,10 @@ def path_finding(player_pos, enemy_pos, WIDTH, HEIGHT, wall_data):
             final_path_list.append(start_node)
             final_path_list.reverse()
             change_enemy_pos(final_path_list)
-            return final_path_list
+            
+            for path in final_path_list:
+                path_list_pos.append([path.x, path.y])
+            return path_list_pos
 
         # 아직 대각쪽은 찾아보지 않음 상하좌우만 설정한 상태
         open_list_add(cur_node.x, cur_node.y + 1, 4)
