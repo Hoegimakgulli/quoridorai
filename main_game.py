@@ -98,7 +98,7 @@ def player_win():
 
 
 # 시작 메인 함수 (게임 룰 관리 및 유닛 이동 절차)
-enemy_character.enemy_spawn()
+enemy_character.enemy_spawn(player_character.player_datas)
 player_character.player_spawn()
 # wall_data.py안에 player 데이터와 enemy 데이터 각각 전달
 wall_data.set_random_wall(player_character.player_datas, enemy_character.enemy_datas)
@@ -121,6 +121,7 @@ while running:
         print("Start EnemyTurn")
         turn_anchor = 0
         if len(player_character.player_datas) > 0:
+            # print(enemy_character.path_finding(player_character.player_datas[0].player_pos, enemy_character.enemy_datas[0].enemy_pos, WIDTH, HEIGHT, wall_data.wall_datas))
             enemy_character.enemy_move(player_character.player_datas[0], WIDTH, HEIGHT, wall_data.wall_datas)
 
     # playerturn 실행
