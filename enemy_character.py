@@ -61,12 +61,13 @@ enemy_count = 2
 enemy_datas = []
 enemy_frames = enemy_character_type.enemy_create_frame()
 
-# path_finding player, enemy 임시 저장 함수 실제로 움직일 때 사용하기 위해 넣어두는 함수 
+# path_finding player, enemy 임시 저장 함수 실제로 움직일 때 사용하기 위해 넣어두는 함수
 # pygame안에서만 사용할것 AI에는 상관 X
 player_tmp_box = None
 enemy_tmp_box = None
 player_datas = []
 target_player = None
+
 
 # enemy 초기 스폰 위치 조정
 def enemy_spawn(tmp_player_datas):
@@ -118,9 +119,9 @@ def path_finding(player_pos, enemy_pos, WIDTH, HEIGHT, wall_data):
     size_y = HEIGHT
     # path 리스트 초기화 [i][j]
     path_array = [[Path(i, j) for j in range(size_y)] for i in range(size_x)]
-
-    start_node = path_array[enemy_pos[0]][enemy_pos[1]]
-    target_node = path_array[player_pos[0]][player_pos[1]]
+    # print(player_pos)
+    start_node: Path = path_array[enemy_pos[0]][enemy_pos[1]]
+    target_node: Path = path_array[player_pos[0]][player_pos[1]]
 
     open_list = [start_node]
     close_list = []
@@ -169,15 +170,15 @@ def path_finding(player_pos, enemy_pos, WIDTH, HEIGHT, wall_data):
         close_list.append(cur_node)
 
         if cur_node == target_node:
-            print("A* end")
-            targetcur_node = target_node.parent_node
+            # print("A* end")
+            targetcur_node: Path = target_node.parent_node
             while targetcur_node != start_node:
                 final_path_list.append(targetcur_node)
                 targetcur_node = targetcur_node.parent_node
             final_path_list.append(start_node)
             final_path_list.reverse()
             change_enemy_pos(final_path_list)
-            
+
             for path in final_path_list:
                 path_list_pos.append([path.x, path.y])
 
@@ -186,8 +187,8 @@ def path_finding(player_pos, enemy_pos, WIDTH, HEIGHT, wall_data):
         open_list_add(cur_node.x + 1, cur_node.y, 2)
         open_list_add(cur_node.x, cur_node.y - 1, 0)
         open_list_add(cur_node.x - 1, cur_node.y, 6)
-    
-    print(path_list_pos)
+
+    # print(path_list_pos)
     return copy.deepcopy(path_list_pos)
 
 
@@ -197,11 +198,11 @@ def change_enemy_pos(path):
     for enemy_pos_data in enemy_datas:
         if enemy_pos_data.enemy_pos[0] == path[0].x and enemy_pos_data.enemy_pos[1] == path[0].y:
             enemy = enemy_pos_data
-    
+
     for player_pos_data in player_datas:
         if player_pos_data.player_pos == target_player:
             player = player_pos_data
-    
+
     if not enemy:
         return None
     if not player:

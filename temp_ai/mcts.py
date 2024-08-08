@@ -36,8 +36,9 @@ class MCTSNode:
             index = 0
         else:
             max_move, index = self.state.enemy_turn(do_move=False)
-        self.state.move(index, max_move, self.team)
-        child_node = MCTSNode(self.state, self.brain, self.epsilon, self, max_move)
+        new_state: Quoridor = self.state.move_clone(index, max_move, self.team)
+        new_state.attack(index, self.team)
+        child_node = MCTSNode(new_state, self.brain, self.epsilon, self, max_move)
         self.children.append(child_node)
         return child_node
 
@@ -83,5 +84,5 @@ class MCTS:
                 self.time += time.time() - self.now
                 self.now = time.time()
                 if self.time >= self.time_limit:
-                    return self.root.best_child.move
-        return self.root.best_child.move
+                    return self.root.best_child().move
+        return self.root.best_child().move

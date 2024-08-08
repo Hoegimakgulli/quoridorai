@@ -6,6 +6,7 @@ import torch
 import torch.nn as nn
 import torch.optim as optim
 import torch.nn.functional as F
+from tqdm import tqdm
 from temp_env import Quoridor, Point, Character
 
 ### 데이터 전처리
@@ -79,14 +80,14 @@ class DQNAgent:
 
     def get_action(self, state: torch.Tensor, available_actions: list[Point], epsilon=0.1):
         x = self.model(state)
-        print(x)
-        print(available_actions)
+        # print(x)
+        # print(available_actions)
 
         values = [x[0, pos.x + pos.y * 9].item() if ((pos.x + pos.y * 9) >= 0 and (pos.x + pos.y * 9) < 81) else -1000 for pos in available_actions]
-        print(values)
+        # print(values)
         max_value = max(values)
         max_index = values.index(max_value)
-        print(max_index)
+        # print(max_index)
 
         if np.random.rand() > epsilon:
             return [*np.random.rand(len(available_actions))]
@@ -104,7 +105,9 @@ class DQNAgent:
         non_final_next_states = torch.cat([s for s in batch.next_state if s is not None])
 
         state_batch = torch.cat(batch.state)
-        action_batch = torch.cat(batch.action)
+        # action_batch = torch.cat(batch.action)
+        action_batch = torch.tensor(batch.action).unsqueeze(1)
+        print(action_batch)
         reward_batch = torch.cat(batch.reward)
 
         state_action_values = self.model(state_batch).gather(1, action_batch)
@@ -134,36 +137,39 @@ def train_agent(epsilon_start=0.9, epsilon_end=0.05, epsilon_decay=200):
     for episode in range(1000):
         env.reset()
         state = env.get_board()
-        done = False
+        # done = False
         total_reward = 0
 
         epsilon = epsilon_end + (epsilon_start - epsilon_end) * np.exp(-1.0 * episode / epsilon_decay)
-        while not done:
+        for t in tqdm(range(1000), desc=f"Episode {episode}: "):
             mcts = MCTS(env, agent, epsilon)
             ## 플레이어 턴
             action = mcts.get_move()
-            env.move(0, action, 1)
-            env.attack(0, 1)
+            print(action)
+            print(env.move(0, action, 1))
+            env.attack(0, 1, show_log=True)
+            env.print_board(4)
             reward = env.get_reward()
 
             next_state = env.get_board()
-            agent.save_memory(state, action, next_state, reward)
+            agent.save_memory(state, action.x + action.y * 9, next_state, torch.tensor([reward]))
             agent.update_model()
 
             total_reward += reward
             state = next_state
 
             if reward != 0:
-                print(f"Episode {episode} finished with reward {total_reward}")
-                done = True
+                print(f"Episode {episode} finished with reward {total_reward}, player won")
+                # done = True
                 break
 
             ## 적 턴
-            env.enemy_turn()
-            if env.check_winner != 0:
+            print(env.enemy_turn())
+            print(env.print_board(4))
+            if env.check_winner() != 0:
                 total_reward += env.get_reward()
-                print(f"Episode {episode} finished with reward {total_reward}")
-                done = True
+                print(f"Episode {episode} finished with reward {total_reward}, enemy won")
+                # done = True
                 break
 
             state = env.get_board()
