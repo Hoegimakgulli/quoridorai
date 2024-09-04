@@ -69,7 +69,7 @@ class Point:
 
 
 class Character:
-    def __init__(self, team: int, position: Point, movable_positions: list[Point], attackable_positions: list[Point], maxHp: int, atk: int):
+    def __init__(self, team: int, position: Point, movable_positions: list[Point], attackable_positions: list[Point], maxHp: int, atk: int, move_ctrl: int, increase_move_ctrl: int):
         self.team = team
         self.position: Point = position
         self.movable_positions: list[Point] = movable_positions
@@ -77,14 +77,19 @@ class Character:
         self.maxHp = maxHp
         self.hp = maxHp
         self.atk = atk
+        self.move_ctrl = move_ctrl
+        self.increase_move_ctrl = increase_move_ctrl
 
     def clone(self, position=None):
         if position is not None:
-            return Character(self.team, position, self.movable_positions, self.attackable_positions, self.maxHp, self.atk)
-        return Character(self.team, self.position, self.movable_positions, self.attackable_positions, self.maxHp, self.atk)
+            return Character(self.team, position, self.movable_positions, self.attackable_positions, self.maxHp, self.atk, self.move_ctrl, self.increase_move_ctrl)
+        return Character(self.team, self.position, self.movable_positions, self.attackable_positions, self.maxHp, self.atk, self.move_ctrl, self.increase_move_ctrl)
 
     def get_abs_movable_positions(self):
         return [self.position + i for i in self.movable_positions]
+
+    def heal_move_ctrl(self):
+        self.move_ctrl = min(self.move_ctrl + self.increase_move_ctrl, 100)
 
 
 default_player = Character(1, Point(4, 0), Point.set_list([[1, 0], [-1, 0], [0, 1], [0, -1]]), Point.set_list([[1, 0], [-1, 0], [0, 1], [0, -1]]), 1, 1)
