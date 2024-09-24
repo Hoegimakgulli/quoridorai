@@ -3,6 +3,8 @@ import random
 import sys
 import os
 import torch
+from enum import Enum
+from typing import List, Union
 
 sys.path.append(os.path.dirname(os.path.abspath(os.path.dirname(__file__))))
 from enemy_character import path_finding
@@ -92,8 +94,16 @@ class Character:
         self.move_ctrl = min(self.move_ctrl + self.increase_move_ctrl, 100)
 
 
-default_player = Character(1, Point(4, 0), Point.set_list([[1, 0], [-1, 0], [0, 1], [0, -1]]), Point.set_list([[1, 0], [-1, 0], [0, 1], [0, -1]]), 1, 1)
-default_enemy = Character(2, Point(4, 8), Point.set_list([[1, 0], [-1, 0], [0, 1], [0, -1]]), Point.set_list([[1, 0], [-1, 0], [0, 1], [0, -1]]), 1, 1)
+default_player = Character(1, Point(4, 0), Point.set_list([[1, 0], [-1, 0], [0, 1], [0, -1]]), Point.set_list([[1, 0], [-1, 0], [0, 1], [0, -1]]), 1, 1, 100, 34)
+default_enemy = Character(2, Point(4, 8), Point.set_list([[1, 0], [-1, 0], [0, 1], [0, -1]]), Point.set_list([[1, 0], [-1, 0], [0, 1], [0, -1]]), 1, 1, 100, 34)
+
+class Wall:
+    class EDirection(Enum):
+        Vertical = 0
+        Horizontal = 1
+    def __init__(self, position: Point, direction: EDirection):
+        self.position : Point = position
+        self.direction : Wall.EDirection = direction
 
 
 class Quoridor:
@@ -101,6 +111,7 @@ class Quoridor:
         self.board = np.zeros((5, 9, 9), dtype=int)  ## 0 : 상, 1 : 하, 2 : 좌, 3: 우, 4: 오브젝트 위치
         self.players: list[Character] = [default_player.clone()]
         self.enemys: list[Character] = []
+        self.walls
         self.set_enemy_positions(1)
 
     @property
@@ -243,6 +254,14 @@ class Quoridor:
             return self.check_half_wall(pos, diff)
         else:
             return False
+
+    def set_wall(self, position: Point, direction: int) -> bool:
+        position = Point(position)
+        if self.can_set_wall(position, direction):
+    
+    def can_set_wall(self, position: Point, direction: int) -> bool:
+        #겹치는 지 확인
+
 
     def check_half_wall(self, position: list[int], direction: list[int]) -> bool:  # 벽이 반으로 막혀있는지 확인: 막혀있으면 False, 아니면 True
         if direction[0] != direction[1]:  # 대각선이 아닌 경우
