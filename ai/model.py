@@ -125,4 +125,11 @@ class DQNAgent:
         torch.save(self.model.state_dict(), "model.pth")
 
     def load_model(self):
-        self.model.load_state_dict(torch.load("model.pth"))
+        try:
+            self.model.load_state_dict(torch.load("model.pth", map_location=self.device, weights_only=True))
+            # print("Model loaded successfully!")
+        except FileNotFoundError:
+            print("Model file not found. Please check the path.")
+        except Exception as e:
+            print(f"Error loading model: {e}")
+            raise ValueError("Model is not loaded")
