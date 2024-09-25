@@ -1,6 +1,7 @@
 import numpy as np
-from utils import Vector2
+from ai.utils import Vector2
 import torch
+import random
 
 
 class Character:
@@ -24,6 +25,9 @@ class Character:
 
     def get_abs_movable_positions(self):
         return [self.position + i for i in self.movable_positions]
+
+    def get_abs_attackable_positions(self):
+        return [self.position + i for i in self.attackable_positions]
 
     def update(self):
         if not self.is_active:
@@ -50,8 +54,8 @@ class Wall:
         self.is_horizontal = is_horizontal
 
 
-default_player = Character(1, Vector2(4, 0), Vector2.set_list([[1, 0], [-1, 0], [0, 1], [0, -1]]), Vector2.set_list([[1, 0], [-1, 0], [0, 1], [0, -1]]), 1, 1, 100, 34)
-default_enemy = Character(2, Vector2(4, 8), Vector2.set_list([[1, 0], [-1, 0], [0, 1], [0, -1]]), Vector2.set_list([[1, 0], [-1, 0], [0, 1], [0, -1]]), 1, 1, 100, 34)
+default_player = Character(1, Vector2(4, 0), [Vector2.up(), Vector2.down(), Vector2.right(), Vector2.left()], [Vector2.up(), Vector2.down(), Vector2.right(), Vector2.left()], 1, 1, 100, 34)
+default_enemy = Character(2, Vector2(4, 8), [Vector2.up(), Vector2.down(), Vector2.right(), Vector2.left()], [Vector2.up(), Vector2.down(), Vector2.right(), Vector2.left()], 1, 1, 100, 34)
 
 
 class Quoridor:
@@ -59,8 +63,10 @@ class Quoridor:
         self.board = np.zeros((5, 9, 9), dtype=int)  ## 0 : 상, 1 : 하, 2 : 좌, 3: 우, 4: 오브젝트 위치
         self.player: Character = default_player.clone()
         self.enemy_list: list[Character] = []
+        self.add_enemy(random.randint(1, 8))
         self.wall_list: list[Wall] = []
         self.turn = 0
+        self.recalculate_board()
 
     @property
     def character_list(self):
@@ -79,6 +85,8 @@ class Quoridor:
         q.player = self.player.clone()
         q.enemy_list = [i.clone() for i in self.enemy_list]
         q.wall_list = [Wall(i.position, i.is_horizontal) for i in self.wall_list]
+        q.turn = self.turn
+        q.recalculate_board()
         return q
 
     def reset(self):
@@ -114,7 +122,15 @@ class Quoridor:
                         elif i == 1 or i == 3:
                             self.board[2, int(related_pos.x), int(related_pos.y)] = 1
 
+    def add_enemy(self, count: int):
+        if count < 0 or count > 8:
+            raise ValueError("Invalid count")
+        for i in range(count):
+            new_enemy = default_enemy.clone(Vector2(random.randint(0, 8), 8))
+            self.enemy_list.append(new_enemy)
+
     def move(self, move_position: Vector2, character: Character):
+        # print(f"to_move:{move_position}, available:{character.get_abs_movable_positions()}")
         if not self.can_move(move_position, character):
             return False
         character.position = move_position
@@ -122,6 +138,10 @@ class Quoridor:
         return True
 
     def can_move(self, move_position: Vector2, character: Character):
+        if type(move_position) is not Vector2:
+            raise ValueError("Invalid move position")
+        if move_position.x < 0 or move_position.y < 0 or move_position.x >= 9 or move_position.y >= 9:
+            return False
         if move_position not in character.get_abs_movable_positions():
             return False
         if self.board[4, int(move_position.x), int(move_position.y)] != 0:
@@ -147,7 +167,7 @@ class Quoridor:
     def can_attack(self, character: Character, target: Character):
         if character.team == target.team:
             return False
-        if character.position not in target.attackable_positions:
+        if character.position not in target.get_abs_attackable_positions():
             return False
         return self.check_wall(character.position, target.position - character.position)
 
@@ -166,8 +186,13 @@ class Quoridor:
         self.attack(character)
         self.next_turn()
 
-    def get_movable_positions(self, character: Character):
-        return [i for i in character.get_abs_movable_positions() if self.can_move(i, character)]
+    def get_movable_positions(self, character: Character = None):
+        if character is None:
+            character = self.current_character
+        movable_positions = [i for i in character.get_abs_movable_positions() if self.can_move(i, character)]
+        if len(movable_positions) == 0:
+            return None
+        return movable_positions
 
     def check_wall(self, position: Vector2, vector: Vector2):  # 벽 검사: 벽이 있으면 False, 없으면 True
         if abs(vector.x) > abs(vector.y):
@@ -222,3 +247,6 @@ class Quoridor:
         elif winner == 2:
             return -1
         return 0
+
+    def print_board(self, index):
+        print(self.board[index])

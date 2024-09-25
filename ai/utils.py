@@ -6,9 +6,11 @@ class Vector2:
         if list is not None:
             self.x = list[0]
             self.y = list[1]
+            return
         elif tuple is not None:
             self.x = tuple[0]
             self.y = tuple[1]
+            return
         self.x = x if x is not None else 0
         self.y = y if y is not None else 0
 

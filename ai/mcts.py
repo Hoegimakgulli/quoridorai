@@ -1,8 +1,8 @@
 import numpy as np
 import random
-from utils import Vector2
-from environment import Quoridor
-from model import DQNAgent
+from ai.utils import Vector2
+from ai.environment import Quoridor
+from ai.model import DQNAgent
 import math
 
 ##TODO: AGENT 개발 후 추가
@@ -18,21 +18,28 @@ class MCTSNode:
         self.value = 0
 
     def is_fully_expanded(self):
-        return len(self.children) == len(self.state.available_moves())
+        return len(self.children) == len(self.state.get_movable_positions())
 
     def best_child(self, exploration_weight=1.4):
-        choices_weights = [(child.value / child.visits) + exploration_weight * math.sqrt(2 * math.log(self.visits) / child.visits) for child in self.children]
+        choices_weights = []
+        for child in self.children:
+            if child.visits == 0:
+                choices_weights.append(float("inf"))  # 탐험하지 않은 노드는 우선적으로 선택
+            else:
+                uct_value = (child.value / child.visits) + exploration_weight * math.sqrt(2 * math.log(self.visits) / child.visits)
+                choices_weights.append(uct_value)
         return self.children[choices_weights.index(max(choices_weights))]
 
 
 class MCTS:
-    def __init__(self, game: Quoridor, brain: DQNAgent, simulations=100):
+    def __init__(self, game: Quoridor, brain: DQNAgent, epsilon, simulations=100):
         self.game: Quoridor = game
         self.brain: DQNAgent = brain
+        self.epsilon = epsilon
         self.simulations = simulations
 
-    def search(self, initial_state):  # 탐색
-        root = MCTSNode(initial_state, Vector2(4, 0))
+    def search(self) -> MCTSNode:  # 탐색
+        root = MCTSNode(self.game.clone(), Vector2(4, 0))
 
         for _ in range(self.simulations):
             node = self.select(root)
@@ -49,21 +56,26 @@ class MCTS:
         return node
 
     def expand(self, node: MCTSNode):  # 확장: 노드 확장
-        moves = node.state.get_movable_positions()  # 이동 가능한 위치
-        for move in moves:  # 이동 가능한 위치에 대해
+        moves = sorted(self.brain.get_action(node.state.get_board(), node.state.get_movable_positions(), self.epsilon), key=lambda x: x[1], reverse=True)  # AI가 추천한 좌표
+        # print(f"to_move:{moves}, available:{node.state.get_movable_positions()} - MCTS")
+        for move, _ in moves:  # 이동 가능한 위치에 대해
             new_state = node.state.clone()  # 상태 복사
             new_state.auto_turn(move_position=move)  # 턴 진행
             child_node = MCTSNode(new_state, move, parent=node)  # 자식 노드 생성
             node.children.append(child_node)  # 자식 노드 추가
-        return random.choice(node.children)  # 랜덤으로 자식 노드 선택
+        return node.children[round(np.abs(np.random.normal(0, 1)) * len(node.children)) % len(node.children)]  # 랜덤으로 자식 노드 선택
 
     def simulate(self, state: Quoridor):  # 시뮬레이션: 게임 종료까지 진행
         current_simulation_state = state.clone()  # 상태 복사
         while current_simulation_state.check_winner() == 0:  # 승자가 나오지 않을 때
             # move = random.choice(current_simulation_state.get_movable_positions())  # 랜덤으로 이동
-            move = self.brain.get_action(current_simulation_state.get_board(), current_simulation_state.get_movable_positions())  # AI가 추천한 좌표로 이동
+            actions = self.brain.get_action(current_simulation_state.get_board(), current_simulation_state.get_movable_positions(), self.epsilon)
+            if len(actions) != 0:
+                move, weight = max(actions, key=lambda x: x[1])  # AI가 추천한 좌표로 이동
+            else:
+                move = None
             current_simulation_state.auto_turn(move_position=move)  # 이동
-            reward = current_simulation_state.get_reward()  # 보상 계산
+            reward = current_simulation_state.reward()  # 보상 계산
             if reward != 0:  # 보상이 0이 아닐 때
                 return reward  # 보상 반환
         return 0
