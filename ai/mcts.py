@@ -9,9 +9,10 @@ import math
 
 
 class MCTSNode:
-    def __init__(self, state: Quoridor, move: Vector2, parent=None):
+    def __init__(self, state: Quoridor, move: Vector2, weight: float, parent=None):
         self.state: Quoridor = state
         self.move: Vector2 = move
+        self.weight: float = weight
         self.parent = parent
         self.children = []
         self.visits = 0
@@ -39,7 +40,7 @@ class MCTS:
         self.simulations = simulations
 
     def search(self) -> MCTSNode:  # 탐색
-        root = MCTSNode(self.game.clone(), Vector2(4, 0))
+        root = MCTSNode(self.game.clone(), Vector2(4, 0), 0)
 
         for _ in range(self.simulations):
             node = self.select(root)
@@ -58,10 +59,10 @@ class MCTS:
     def expand(self, node: MCTSNode):  # 확장: 노드 확장
         moves = sorted(self.brain.get_action(node.state.get_board(), node.state.get_movable_positions(), self.epsilon), key=lambda x: x[1], reverse=True)  # AI가 추천한 좌표
         # print(f"to_move:{moves}, available:{node.state.get_movable_positions()} - MCTS")
-        for move, _ in moves:  # 이동 가능한 위치에 대해
+        for move, weight in moves:  # 이동 가능한 위치에 대해
             new_state = node.state.clone()  # 상태 복사
             new_state.auto_turn(move_position=move)  # 턴 진행
-            child_node = MCTSNode(new_state, move, parent=node)  # 자식 노드 생성
+            child_node = MCTSNode(new_state, move, weight, parent=node)  # 자식 노드 생성
             node.children.append(child_node)  # 자식 노드 추가
         return node.children[round(np.abs(np.random.normal(0, 1)) * len(node.children)) % len(node.children)]  # 랜덤으로 자식 노드 선택
 

@@ -10,7 +10,7 @@ def calculate_win_rate(count):
     win = 0
     lose = 0
     brain = DQNAgent()
-    brain.load_model()
+    brain.load_model(id=4999)
     if brain is None:
         raise ValueError("Model is not loaded")
     for _ in tqdm(range(count), desc="In Game: "):

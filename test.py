@@ -15,15 +15,11 @@ def move_position(scat: PathCollection, x, y):
 
 if __name__ == "__main__":
     board = Quoridor()
-    board.player = board.player.clone()
-    board.enemy_list = [board.enemy_list[0]]
-    board.turn = board.turn
-    board.recalculate_board()
 
     fig, ax = plt.subplots(figsize=(8, 8))
 
     player_point = ax.scatter(board.player.position.x, board.player.position.y, c="blue", s=1200)
-    enemy_point = ax.scatter(board.enemy_list[0].position.x, board.enemy_list[0].position.y, c="red", s=1200)
+    enemy_point_list = [(ax.scatter(enemy.position.x, enemy.position.y, c="red", s=1200), enemy) for enemy in board.enemy_list]
 
     ax.grid(True)
     ax.set_xlim(-0.5, 8.5)
@@ -34,7 +30,7 @@ if __name__ == "__main__":
 
     ax.tick_params(labelbottom=False, labelleft=False)
     brain = DQNAgent()
-    brain.load_model()
+    brain.load_model(id=4999)
 
     if brain is None:
         raise ValueError("Model is not loaded")
@@ -45,8 +41,13 @@ if __name__ == "__main__":
         action = mcts.search().move if board.turn % 2 == 0 else path_finding(board.clone(), 9, 9)
         board.auto_turn(move_position=action)
         player_point = move_position(player_point, board.player.position.x, board.player.position.y)
-        enemy_point = move_position(enemy_point, board.enemy_list[0].position.x, board.enemy_list[0].position.y)
-        return player_point, enemy_point
+        if not board.player.is_active:
+            player_point = move_position(player_point, -1, -1)
+        for point, enemy in enemy_point_list:
+            point = move_position(point, enemy.position.x, enemy.position.y)
+            if not enemy.is_active:
+                point = move_position(point, -1, -1)
+        return player_point, *enemy_point_list
 
     def check_winner():
         frame = 0
