@@ -86,7 +86,7 @@ class DQNAgent:
         max_index = values.index(max_value)  # 최대값 인덱스 계산
         # print(max_index)
 
-        if np.random.rand() > epsilon:  # 랜덤으로 액션 선택
+        if np.random.rand() < epsilon:  # 랜덤으로 액션 선택
             random_weight = [*np.random.rand(len(available_actions))]  # 랜덤 가중치 생성
             value_list = [(action, random_weight[i]) for i, action in enumerate(available_actions)]  # 가중치 리스트 생성
             return value_list  # 가중치 리스트 반환
