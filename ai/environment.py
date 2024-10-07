@@ -96,6 +96,8 @@ class Quoridor:  # 쿼리도 클래스
         else:  # 홀수인 경우
             if len(self.enemy_list) == 1:  # 적이 하나인 경우
                 return self.enemy_list[0]  # 적 반환
+            if not any([i.is_active for i in self.enemy_list]):  # 적이 모두 죽은 경우
+                return self.player  # 플레이어 반환
             while True:  # 적이 활성화되지 않은 경우
                 enemy = self.enemy_circle_queue.peek()  # 적 반환 (지금은 생성된 순서대로 턴 돌아감)
                 if enemy is not None and enemy.is_active:

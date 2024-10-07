@@ -19,7 +19,8 @@ class MCTSNode:
         self.value = 0
 
     def is_fully_expanded(self):
-        if self.state.get_movable_positions() is None:
+        movable_positions = self.state.get_movable_positions()
+        if movable_positions is None or len(movable_positions) == 0:
             return True
         return len(self.children) == len(self.state.get_movable_positions())
 
@@ -60,6 +61,8 @@ class MCTS:
 
     def expand(self, node: MCTSNode):  # 확장: 노드 확장
         moves = sorted(self.brain.get_action(node.state.get_board(), node.state.get_movable_positions(), self.epsilon), key=lambda x: x[1], reverse=True)  # AI가 추천한 좌표
+        if len(moves) == 0:
+            return node
         # print(f"to_move:{moves}, available:{node.state.get_movable_positions()} - MCTS")
         for move, weight in moves:  # 이동 가능한 위치에 대해
             new_state = node.state.clone()  # 상태 복사
