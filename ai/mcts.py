@@ -64,15 +64,16 @@ class MCTS:
             new_state.auto_turn(move_position=move)  # 턴 진행
             child_node = MCTSNode(new_state, move, weight, parent=node)  # 자식 노드 생성
             node.children.append(child_node)  # 자식 노드 추가
-        return node.children[round(np.abs(np.random.normal(0, 1)) * len(node.children)) % len(node.children)]  # 랜덤으로 자식 노드 선택
+        return node.children[round(np.abs(np.random.normal(0, 1)) ** 2 * len(node.children)) % len(node.children)]  # 랜덤으로 자식 노드 선택
 
     def simulate(self, state: Quoridor):  # 시뮬레이션: 게임 종료까지 진행
         current_simulation_state = state.clone()  # 상태 복사
-        while current_simulation_state.check_winner() == 0:  # 승자가 나오지 않을 때
+        while current_simulation_state.check_winner() == 0 or current_simulation_state.turn < 100:  # 승자가 나오지 않을 때
             # move = random.choice(current_simulation_state.get_movable_positions())  # 랜덤으로 이동
             actions = self.brain.get_action(current_simulation_state.get_board(), current_simulation_state.get_movable_positions(), self.epsilon)
             if len(actions) != 0:
-                move, weight = max(actions, key=lambda x: x[1])  # AI가 추천한 좌표로 이동
+                # move, weight = max(actions, key=lambda x: x[1])  # AI가 추천한 좌표로 이동
+                move = actions[round(np.abs(np.random.normal(0, 1)) ** 2 * len(actions)) % len(actions)][0]
             else:
                 move = None
             current_simulation_state.auto_turn(move_position=move)  # 이동

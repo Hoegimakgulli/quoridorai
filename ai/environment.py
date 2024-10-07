@@ -1,5 +1,5 @@
 import numpy as np
-from ai.utils import Vector2
+from ai.utils import Vector2, CircularQueue
 import torch
 import random
 
@@ -20,8 +20,14 @@ class Character:  # 캐릭터 클래스
 
     def clone(self, position=None):  # 복제
         if position is not None:  # 위치가 주어진 경우
-            return Character(self.team, position, self.movable_positions, self.attackable_positions, self.maxHp, self.atk, self.move_ctrl, self.increase_move_ctrl)  # 새로운 캐릭터 (좌표 포함) 생성
-        return Character(self.team, self.position, self.movable_positions, self.attackable_positions, self.maxHp, self.atk, self.move_ctrl, self.increase_move_ctrl)  # 새로운 캐릭터 생성
+            new_character = Character(
+                self.team, position, self.movable_positions, self.attackable_positions, self.maxHp, self.atk, self.move_ctrl, self.increase_move_ctrl
+            )  # 새로운 캐릭터 (좌표 포함) 생성
+        else:
+            new_character = Character(self.team, self.position, self.movable_positions, self.attackable_positions, self.maxHp, self.atk, self.move_ctrl, self.increase_move_ctrl)  # 새로운 캐릭터 생성
+        new_character.hp = self.hp  # 체력 복사
+        new_character.is_active = self.is_active
+        return new_character  # 새로운 캐릭터 반환
 
     def get_abs_movable_positions(self):  # 절대 이동 좌표 반환
         return [self.position + i for i in self.movable_positions]  # 이동 가능한 위치 + 현재 위치 = 절대 좌표 반환
@@ -66,6 +72,8 @@ class Quoridor:  # 쿼리도 클래스
         self.player: Character = default_player.clone()  # 플레이어
         self.enemy_list: list[Character] = []  # 적 리스트
         self.add_enemy(random.randint(1, 8))  # 적 추가
+        self.enemy_circle_queue: CircularQueue = CircularQueue(len(self.enemy_list))  # 적 순환 큐
+        self.enemy_circle_queue.enqueue_list(self.enemy_list)  # 적 순환 큐에 적 리스트 추가
         self.wall_list: list[Wall] = []  # 벽 리스트
         self.turn = 0  # 턴
         self.recalculate_board()  # 보드 재계산
@@ -79,13 +87,25 @@ class Quoridor:  # 쿼리도 클래스
         if self.turn % 2 == 0:  # 턴이 짝수인 경우
             return self.player  # 플레이어 반환
         else:  # 홀수인 경우
-            return self.enemy_list[(self.turn // 2) % len(self.enemy_list)]  # 적 반환 (지금은 생성된 순서대로 턴 돌아감)
+            while True:  # 적이 활성화되지 않은 경우
+                enemy = self.enemy_circle_queue.peek()  # 적 반환 (지금은 생성된 순서대로 턴 돌아감)
+                if enemy is not None and enemy.is_active:
+                    return enemy  # 적 반환
+                else:
+                    self.enemy_circle_queue.forward()  # 순환 큐에서 다음 적으로 이동
 
     def clone(self):  # 복제
         q = Quoridor()  # 새로운 쿼리도 생성
         q.board = self.board.copy()  # 보드 복사
         q.player = self.player.clone()  # 플레이어 복제
         q.enemy_list = [i.clone() for i in self.enemy_list]  # 적 리스트 복제
+        q.enemy_circle_queue = CircularQueue(len(q.enemy_list))  # 적 순환 큐 생성
+        for i in range(len(q.enemy_list) + 1):
+            if self.enemy_circle_queue.queue[i] is None:
+                continue
+            q.enemy_circle_queue.queue[i] = q.enemy_list[self.enemy_list.index(self.enemy_circle_queue.queue[i])]
+        q.enemy_circle_queue.front = self.enemy_circle_queue.front  # 적 순환 큐 복제
+        q.enemy_circle_queue.rear = self.enemy_circle_queue.rear
         q.wall_list = [Wall(i.position, i.is_horizontal) for i in self.wall_list]  # 벽 리스트 복제
         q.turn = self.turn  # 턴 복사
         q.recalculate_board()  # 보드 재계산
@@ -180,6 +200,8 @@ class Quoridor:  # 쿼리도 클래스
         self.turn += 1  # 턴 증가
         for char in self.character_list:  # 캐릭터 리스트에 대해 반복
             char.update()  # 캐릭터 업데이트
+        if self.turn % 2 == 1:  # 홀수 턴인 경우
+            self.enemy_circle_queue.forward()  # 적 순환 큐에서 다음 적으로 이동
         self.recalculate_board()  # 보드 재계산
 
     def auto_turn(self, character: Character = None, move_position: Vector2 = None):  # 자동 턴
@@ -194,7 +216,7 @@ class Quoridor:  # 쿼리도 클래스
     def get_movable_positions(self, character: Character = None):  # 이동 가능한 위치 반환
         if character is None:  # 캐릭터가 주어지지 않은 경우
             character = self.current_character  # 현재 캐릭터 선택
-        movable_positions = [i for i in character.get_abs_movable_positions() if self.can_move(i, character)]  # 이동 가능한 위치 리스트
+        movable_positions = [move for move in character.get_abs_movable_positions() if self.can_move(move, character)]  # 이동 가능한 위치 리스트
         if len(movable_positions) == 0:  # 이동 가능한 위치가 없는 경우
             return None  # None 반환
         return movable_positions  # 이동 가능한 위치 반환

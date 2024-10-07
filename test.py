@@ -30,13 +30,14 @@ if __name__ == "__main__":
 
     ax.tick_params(labelbottom=False, labelleft=False)
     brain = DQNAgent()
-    brain.load_model(id=4999)
+    brain.load_model(id=5000)
 
     if brain is None:
         raise ValueError("Model is not loaded")
 
     def update(frame):
-        global player_point, enemy_point
+        print(f"Update: {frame}")
+        global player_point, enemy_point_list
         mcts = MCTS(board, brain, 0, 1)
         action = mcts.search().move if board.turn % 2 == 0 else path_finding(board.clone(), 9, 9)
         board.auto_turn(move_position=action)
@@ -51,8 +52,9 @@ if __name__ == "__main__":
 
     def check_winner():
         frame = 0
-        while board.check_winner() == 0:
+        while board.check_winner() == 0 or frame < 100:
             yield frame
+            print(f"Frame: {frame}")
             frame += 1
         yield frame
 

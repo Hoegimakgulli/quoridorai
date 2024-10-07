@@ -48,7 +48,7 @@ def train_agent(epsilon_start=0.9, epsilon_end=0.05, epsilon_decay=200):
                 break
         process_time.append(process_bar.format_dict["elapsed"])
         agent.update_target_model()
-        if episode % 10 == 0:
+        if episode % 100 == 0:
             agent.save_model(id=episode)
 
 

@@ -101,3 +101,57 @@ class Vector2:
 
     def right():
         return Vector2(1, 0)
+
+
+class CircularQueue:
+    def __init__(self, size):
+        self.size = size + 1
+        self.queue = [None] * self.size
+        self.front = self.rear = 0
+
+    def is_empty(self):
+        return self.front == self.rear
+
+    def is_full(self):
+        return (self.rear + 1) % self.size == self.front
+
+    def enqueue(self, data):
+        if self.is_full():
+            raise IndexError("Queue is full")
+        self.rear = (self.rear + 1) % self.size
+        self.queue[self.rear] = data
+
+    def dequeue(self):
+        if self.is_empty():
+            raise IndexError("Queue is empty")
+        item = self.queue[self.front]
+        if self.front == self.rear:
+            self.front = self.rear = -1  # 큐가 비었을 때 초기화
+        else:
+            self.front = (self.front + 1) % self.size  # 포인터를 다음으로 넘김
+        return item
+
+    def peek(self):
+        if self.is_empty():
+            raise IndexError("Queue is empty")
+        return self.queue[self.front]
+
+    def enqueue_list(self, data):
+        for d in data:
+            self.enqueue(d)
+
+    def forward(self):
+        if self.is_empty():
+            raise IndexError("Queue is empty")
+        data = None
+        while data is None:
+            data = self.dequeue()
+        self.enqueue(data)
+        return data
+
+
+if __name__ == "__main__":
+    q = CircularQueue(5)
+    q.enqueue_list([1, 2, 3, 4, 5])
+    for _ in range(14):
+        print(q.forward())
