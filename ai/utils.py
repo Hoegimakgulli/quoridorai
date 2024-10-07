@@ -150,8 +150,46 @@ class CircularQueue:
         return data
 
 
-if __name__ == "__main__":
-    q = CircularQueue(5)
-    q.enqueue_list([1, 2, 3, 4, 5])
-    for _ in range(14):
-        print(q.forward())
+class CircularBuffer:
+    def __init__(self, size):
+        self.size = size
+        self.buffer = [None] * self.size
+        self.index = 0
+
+    def append(self, data):
+        self.buffer[self.index] = data
+        self.index = (self.index + 1) % self.size
+
+    def get(self, index=0):
+        return self.buffer[(self.index + index) % self.size]
+
+    def __getitem__(self, index):
+        return self.get(index)
+
+    def __len__(self):
+        return self.size
+
+    def __iter__(self):
+        for i in range(self.size):
+            yield self.get(i)
+
+    def __str__(self):
+        return str(self.buffer)
+
+    def __repr__(self):
+        return str(self.buffer)
+
+
+def mean(data: iter):
+    sum = 0
+    count = 0
+    for d in data:
+        if d is None:
+            continue
+        if type(d) == int or type(d) == float:
+            sum += d
+            count += 1
+    if count == 0:
+        return 0
+    else:
+        return sum / count

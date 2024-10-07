@@ -19,6 +19,8 @@ class MCTSNode:
         self.value = 0
 
     def is_fully_expanded(self):
+        if self.state.get_movable_positions() is None:
+            return True
         return len(self.children) == len(self.state.get_movable_positions())
 
     def best_child(self, exploration_weight=1.4):
@@ -50,9 +52,9 @@ class MCTS:
         return root.best_child(exploration_weight=0)
 
     def select(self, node: MCTSNode):  # 선택: 가장 유망한 노드 선택
-        while node.state.check_winner() == 0 and node.is_fully_expanded():  # 노드가 완전 확장되지 않았거나, 승자가 나오지 않았을 때
+        while node.state.check_winner() == 0 and node.is_fully_expanded() and len(node.children) > 0:  # 노드가 완전 확장되지 않았거나, 승자가 나오지 않았을 때
             node = node.best_child()  # 가장 유망한 노드 선택
-        if not node.is_fully_expanded():  # 노드가 완전 확장되지 않았을 때
+        if node.state.check_winner() == 0 and not node.is_fully_expanded():  # 승자가 나오지 않았고, 노드가 완전 확장되지 않았을 때
             return self.expand(node)  # 확장
         return node
 

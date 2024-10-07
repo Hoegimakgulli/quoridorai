@@ -61,7 +61,14 @@ class Wall:  # 벽 클래스
 
 
 default_player = Character(
-    1, Vector2(4, 0), [Vector2.up(), Vector2.down(), Vector2.right(), Vector2.left()], [Vector2.up(), Vector2.down(), Vector2.right(), Vector2.left()], 1, 1, 100, 34
+    1,
+    Vector2(4, 0),
+    [Vector2.up(), Vector2.down(), Vector2.right(), Vector2.left()],
+    [Vector2.up(), Vector2.down(), Vector2.right(), Vector2.left(), Vector2.up() * 2, Vector2.down() * 2, Vector2.right() * 2, Vector2.left() * 2],
+    1,
+    1,
+    100,
+    34,
 )  # 기본 플레이어
 default_enemy = Character(2, Vector2(4, 8), [Vector2.up(), Vector2.down(), Vector2.right(), Vector2.left()], [Vector2.up(), Vector2.down(), Vector2.right(), Vector2.left()], 1, 1, 100, 34)  # 기본 적
 
@@ -87,6 +94,8 @@ class Quoridor:  # 쿼리도 클래스
         if self.turn % 2 == 0:  # 턴이 짝수인 경우
             return self.player  # 플레이어 반환
         else:  # 홀수인 경우
+            if len(self.enemy_list) == 1:  # 적이 하나인 경우
+                return self.enemy_list[0]  # 적 반환
             while True:  # 적이 활성화되지 않은 경우
                 enemy = self.enemy_circle_queue.peek()  # 적 반환 (지금은 생성된 순서대로 턴 돌아감)
                 if enemy is not None and enemy.is_active:
@@ -200,7 +209,7 @@ class Quoridor:  # 쿼리도 클래스
         self.turn += 1  # 턴 증가
         for char in self.character_list:  # 캐릭터 리스트에 대해 반복
             char.update()  # 캐릭터 업데이트
-        if self.turn % 2 == 1:  # 홀수 턴인 경우
+        if self.turn % 2 == 1 and len(self.enemy_list) > 1:  # 홀수 턴인 경우
             self.enemy_circle_queue.forward()  # 적 순환 큐에서 다음 적으로 이동
         self.recalculate_board()  # 보드 재계산
 
