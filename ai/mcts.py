@@ -36,13 +36,17 @@ class MCTSNode:
 
 
 class MCTS:
-    def __init__(self, game: Quoridor, brain: DQNAgent, epsilon, simulations=100):
+    def __init__(self, game: Quoridor, brain: DQNAgent, epsilon, simulations=None):
         self.game: Quoridor = game
         self.brain: DQNAgent = brain
         self.epsilon = epsilon
+        if simulations is None:
+            simulations = self.sigmoid_simulate_count(np.var([weight for action, weight in self.brain.get_action(self.game.get_board(), self.game.get_movable_positions(), self.epsilon)]))
         self.simulations = simulations
         self.convergence_threshold = 0.95
         self.ucb_threshold = 0.1
+
+        self.real_simulation_count = 0
 
     def search(self) -> MCTSNode:  # 탐색
         root = MCTSNode(self.game.clone(), Vector2(4, 0), 0)
@@ -52,8 +56,14 @@ class MCTS:
             reward = self.simulate(node.state)
             self.backpropagate(node, reward)
 
-            if self.check_convergence(root) or self.check_ucb_difference(root):
-                break
+            self.real_simulation_count += 1
+
+            if self.real_simulation_count > 50:
+                if self.check_convergence(root):
+                    break
+
+                if self.check_ucb_difference(root):
+                    break
 
         return root.best_child(exploration_weight=0)
 
@@ -129,3 +139,15 @@ class MCTS:
                 return False  # UCT 값 차이가 임계값보다 작으면 계속 탐색
 
         return True  # UCT 값 차이가 충분히 벌어졌으면 종료
+
+    def sigmoid_simulate_count(self, variance, min=50, max=150, k=2.5):
+
+        def sigmoid(x):
+            return 1 / (1 + np.exp(-k * x))
+
+        scale = sigmoid(1 - variance)
+
+        result = int(min + scale * (max - min))
+        if result < min:
+            return min
+        return result

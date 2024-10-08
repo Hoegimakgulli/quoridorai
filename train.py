@@ -8,24 +8,11 @@ import numpy as np
 from tqdm import tqdm
 
 
-def sigmoid_simulate_count(variance, min=50, max=150, k=2.5):
-
-    def sigmoid(x):
-        return 1 / (1 + np.exp(-k * x))
-
-    scale = sigmoid(1 - variance)
-
-    result = int(min + scale * (max - min))
-    if result < min:
-        return min
-    return result
-
-
 def train_agent(epsilon_start=0.9, epsilon_end=0.05, epsilon_decay=200):
     agent = DQNAgent()
     env: Quoridor = Quoridor()
-    process_time: CircularBuffer = CircularBuffer(10)
-    win_history: CircularBuffer = CircularBuffer(10)
+    process_time: CircularBuffer = CircularBuffer(100)
+    win_history: CircularBuffer = CircularBuffer(100)
 
     for episode in range(5001):
         env.reset()
@@ -38,13 +25,12 @@ def train_agent(epsilon_start=0.9, epsilon_end=0.05, epsilon_decay=200):
             range(1000), desc=f"Episode {episode}: ", postfix=(None if episode == 0 else {"mean time": mean(process_time), "last time": process_time[-1], "win rate(last 10)": mean(win_history) * 100})
         )
         for turn in range(1000):
-            simulate_count = sigmoid_simulate_count(np.var([weight for action, weight in agent.get_action(env.get_board(), env.get_movable_positions())]))
-            mcts = MCTS(env, agent, epsilon, simulate_count)
+            mcts = MCTS(env, agent, epsilon)
 
             if env.turn % 2 != 0:
                 raise ValueError("플레이어의 턴이 아닙니다. : train_agent (def train_agent)")
             action = mcts.search().move  # 플레이어 턴이면 MCTS
-            # print(action)
+            # print(mcts.real_simulation_count)
             env.auto_turn(move_position=action)  # 행동을 수행
             # env.print_board(4)  # 보드 출력
             reward = env.reward()  # 보상 계산
