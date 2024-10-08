@@ -41,6 +41,8 @@ class MCTS:
         self.brain: DQNAgent = brain
         self.epsilon = epsilon
         self.simulations = simulations
+        self.convergence_threshold = 0.95
+        self.ucb_threshold = 0.1
 
     def search(self) -> MCTSNode:  # 탐색
         root = MCTSNode(self.game.clone(), Vector2(4, 0), 0)
@@ -49,6 +51,9 @@ class MCTS:
             node = self.select(root)
             reward = self.simulate(node.state)
             self.backpropagate(node, reward)
+
+            if self.check_convergence(root) or self.check_ucb_difference(root):
+                break
 
         return root.best_child(exploration_weight=0)
 
@@ -92,3 +97,35 @@ class MCTS:
             node.visits += 1  # 방문 횟수 증가
             node.value += reward  # 보상 증가
             node = node.parent  # 상위 노드로 이동
+
+    def check_convergence(self, node: MCTSNode) -> bool:
+        """노드 방문 횟수를 기반으로 탐색 수렴 여부를 판단"""
+        if len(node.children) == 0:
+            return False
+
+        visit_counts = [child.visits for child in node.children]
+        total_visits = sum(visit_counts)
+        max_visits = max(visit_counts)
+
+        # 가장 많이 방문된 자식 노드가 임계값 이상일 경우 조기 종료
+        return (max_visits / total_visits) >= self.convergence_threshold
+
+    def check_ucb_difference(self, node: MCTSNode) -> bool:
+        """UCT 값의 차이를 기준으로 조기 종료 여부를 판단"""
+        if len(node.children) == 0:
+            return False
+
+        ucb_values = []
+        for child in node.children:
+            if child.visits == 0:
+                ucb_values.append(float("inf"))
+            else:
+                ucb_value = (child.value / child.visits) + math.sqrt(2 * math.log(node.visits) / child.visits)
+                ucb_values.append(ucb_value)
+
+        max_ucb = max(ucb_values)
+        for value in ucb_values:
+            if abs(max_ucb - value) < self.ucb_threshold:
+                return False  # UCT 값 차이가 임계값보다 작으면 계속 탐색
+
+        return True  # UCT 값 차이가 충분히 벌어졌으면 종료
