@@ -159,10 +159,11 @@ class Quoridor:  # 쿼리도 클래스
         if count < 0 or count > 8:  # 0 미만 또는 8 초과인 경우
             raise ValueError("Invalid count")  # 오류 발생
         for i in range(count):  # count만큼 반복
-            new_pos = Vector2(random.randint(0, 8), 8)  # 새로운 위치
-            while new_pos in [i.position for i in self.character_list]:  # 위치가 겹치지 않을 때까지 반복
+            while True:  # 위치가 겹치지 않을 때까지 반복
                 new_pos = Vector2(random.randint(0, 8), 8)
-            new_enemy = default_enemy.clone(Vector2(random.randint(0, 8), 8))  # 새로운 적 생성
+                if new_pos not in [i.position for i in self.character_list]:
+                    break
+            new_enemy = default_enemy.clone(new_pos)  # 새로운 적 생성
             self.enemy_list.append(new_enemy)  # 적 리스트에 추가
 
     def move(self, move_position: Vector2, character: Character):  # 이동
@@ -201,9 +202,11 @@ class Quoridor:  # 쿼리도 클래스
                 return character.attack(self.player)  # 플레이어 공격
 
     def can_attack(self, character: Character, target: Character):  # 공격 가능한지 확인
+        if not target.is_active:  # 활성화되지 않은 경우
+            return False  # False 반환
         if character.team == target.team:  # 같은 팀인 경우
             return False  # False 반환
-        if character.position not in target.get_abs_attackable_positions():  # 공격 가능한 위치가 아닌 경우
+        if target.position not in character.get_abs_attackable_positions():  # 공격 가능한 위치가 아닌 경우
             return False  # False 반환
         return self.check_wall(character.position, target.position - character.position)  # 공격 가능한 위치 사이에 벽이 있는지 확인
 
