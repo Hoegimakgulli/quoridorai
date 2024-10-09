@@ -22,6 +22,8 @@ if __name__ == "__main__":
     player_point = ax.scatter(board.player.position.x, board.player.position.y, c="blue", s=1200)
     enemy_point_list = [(ax.scatter(enemy.position.x, enemy.position.y, c="red", s=1200), enemy) for enemy in board.enemy_list]
 
+    print(len(board.enemy_list))
+
     board_list = [deepcopy(board.board[4])]
 
     ax.grid(True)
@@ -33,7 +35,7 @@ if __name__ == "__main__":
 
     ax.tick_params(labelbottom=False, labelleft=False)
     brain = DQNAgent()
-    brain.load_model(id=400)
+    brain.load_model(id=777)
 
     if brain is None:
         raise ValueError("Model is not loaded")
@@ -41,7 +43,7 @@ if __name__ == "__main__":
     def update(frame):
         print(f"Update: {frame}")
         global player_point, enemy_point_list
-        mcts = MCTS(board, brain, 0, 1)
+        mcts = MCTS(board, brain, 0)
         if board.check_winner() != 0:
             return player_point, *enemy_point_list
         action = mcts.search().move if board.turn % 2 == 0 else path_finding(board.clone(), 9, 9)

@@ -235,7 +235,23 @@ class Quoridor:  # 쿼리도 클래스
             return None  # None 반환
         return movable_positions  # 이동 가능한 위치 반환
 
+    def get_dangerous_positions(self):  # 위험 지역 반환
+        dangerous_positions = []
+        for enemy in self.enemy_list:  # 적 리스트에 대해 반복
+            if not enemy.is_active:
+                continue
+            for move in self.get_movable_positions(enemy):  # 적의 이동 가능한 위치에 대해 반복
+                if not self.can_move(move, enemy):  # 이동 가능한 경우
+                    continue
+                for attack in enemy.attackable_positions:
+                    if self.check_wall(move, attack):
+                        dangerous_positions.append(move + attack)
+        return dangerous_positions
+
     def check_wall(self, position: Vector2, vector: Vector2):  # 벽 검사: 벽이 있으면 False, 없으면 True
+        new_pos = position + vector  # 새로운 위치
+        if new_pos.x < 0 or new_pos.y < 0 or new_pos.x >= 9 or new_pos.y >= 9:  # 새로운 위치가 범위를 벗어나는 경우
+            return False  # False 반환
         if abs(vector.x) > abs(vector.y):  # x축 이동이 더 큰 경우
             if vector.x > 0:  # 우향
                 return self.board[3, int(position.x), int(position.y)] == 0  # 우에 벽이 없는 경우 True 반환
