@@ -101,3 +101,95 @@ class Vector2:
 
     def right():
         return Vector2(1, 0)
+
+
+class CircularQueue:
+    def __init__(self, size):
+        self.size = size + 1
+        self.queue = [None] * self.size
+        self.front = self.rear = 0
+
+    def is_empty(self):
+        return self.front == self.rear
+
+    def is_full(self):
+        return (self.rear + 1) % self.size == self.front
+
+    def enqueue(self, data):
+        if self.is_full():
+            raise IndexError("Queue is full")
+        self.rear = (self.rear + 1) % self.size
+        self.queue[self.rear] = data
+
+    def dequeue(self):
+        if self.is_empty():
+            raise IndexError("Queue is empty")
+        item = self.queue[self.front]
+        if self.front == self.rear:
+            self.front = self.rear = -1  # 큐가 비었을 때 초기화
+        else:
+            self.front = (self.front + 1) % self.size  # 포인터를 다음으로 넘김
+        return item
+
+    def peek(self):
+        if self.is_empty():
+            raise IndexError("Queue is empty")
+        return self.queue[self.front]
+
+    def enqueue_list(self, data):
+        for d in data:
+            self.enqueue(d)
+
+    def forward(self):
+        if self.is_empty():
+            raise IndexError("Queue is empty")
+        data = None
+        while data is None:
+            data = self.dequeue()
+        self.enqueue(data)
+        return data
+
+
+class CircularBuffer:
+    def __init__(self, size):
+        self.size = size
+        self.buffer = [None] * self.size
+        self.index = 0
+
+    def append(self, data):
+        self.buffer[self.index] = data
+        self.index = (self.index + 1) % self.size
+
+    def get(self, index=0):
+        return self.buffer[(self.index + index) % self.size]
+
+    def __getitem__(self, index):
+        return self.get(index)
+
+    def __len__(self):
+        return self.size
+
+    def __iter__(self):
+        for i in range(self.size):
+            yield self.get(i)
+
+    def __str__(self):
+        return str(self.buffer)
+
+    def __repr__(self):
+        return str(self.buffer)
+
+
+def mean(data: iter):
+    sum = 0
+    count = 0
+    for d in data:
+        if d is None:
+            continue
+        if type(d) == int or type(d) == float:
+            sum += d
+            count += 1
+    if count == 0:
+        return 0
+    else:
+        return sum / count
